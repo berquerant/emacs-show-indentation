@@ -5,7 +5,7 @@
 ;; Created: 4 Feb 2026
 ;; Version: 0.1.0
 ;; Keywords: indentation
-;; URL: https://github.com/berquerant/emacs-show-indenttion
+;; URL: https://github.com/berquerant/emacs-show-indentation
 
 ;; This file is NOT part of GNU Emacs.
 
