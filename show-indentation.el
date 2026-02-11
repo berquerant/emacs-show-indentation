@@ -87,6 +87,12 @@
   (interactive)
   (show-indentation--cleanup))
 
+;; FIXME: This timer-based overlay update causes Emacs GUI to hang.
+;; - Works fine in TTY (CUI) mode, but freezes in GUI mode.
+;; - Potential causes:
+;;   1. Infinite redisplay loop triggered by `set-window-margins` or margin overlays.
+;;   2. Conflict between `window-end` calculation and GUI font rendering.
+;;   3. Deadlock in the rendering engine when updating `display` properties in the margin.
 (idle-timer-define-minor-mode show-indentation-show show-indentation-minor-mode-delay)
 
 (defun show-indentation-show-idle-timer-mode-toggle--disabled-hook ()
@@ -102,11 +108,14 @@
 
 (add-hook 'show-indentation-show-idle-timer-mode-hook 'show-indentation-show-idle-timer-mode--hook)
 
-(defun show-indentation-show-idle-timer-mode--should-turn-on? ()
+(defun show-indentation--should-show? ()
   (and (not (minibufferp))
        (or (string-match show-indentation-include-buffer-regexp (buffer-name))
            (and (not (string-match show-indentation-exclude-buffer-regexp (buffer-name)))
                 (buffer-file-name)))))
+
+(defun show-indentation-show-idle-timer-mode--should-turn-on? ()
+  (show-indentation--should-show?))
 
 (defun show-indentation-show-idle-timer-mode-turn-on ()
   (when (show-indentation-show-idle-timer-mode--should-turn-on?)
@@ -115,6 +124,28 @@
 (define-globalized-minor-mode global-show-indentation-show-idle-timer-mode
   show-indentation-show-idle-timer-mode
   show-indentation-show-idle-timer-mode-turn-on)
+
+(defun show-indentation--global-show ()
+  (when (show-indentation--should-show?)
+    (show-indentation--show)))
+
+(defun show-indentation--global-enabled? ()
+  (member 'show-indentation--global-show (default-value 'post-command-hook)))
+
+(defun show-indentation--global-disable ()
+  (remove-hook 'post-command-hook 'show-indentation--global-show)
+  (show-indentation--cleanup))
+
+(defun show-indentation--global-enable ()
+  (add-hook 'post-command-hook 'show-indentation--global-show))
+
+;;;###autoload
+(defun show-indentation-global-toggle ()
+  "If `show-indentation--global-show' is not in `post-command-hook', add it.
+Otherwise, remove it."
+  (interactive)
+  (if (show-indentation--global-enabled?) (show-indentation--global-disable)
+    (show-indentation--global-enable)))
 
 (provide 'show-indentation)
 ;;; show-indentation.el ends here
