@@ -3,7 +3,7 @@
 ;; Author: berquerant
 ;; Maintainer: berquerant
 ;; Created: 4 Feb 2026
-;; Version: 0.2.0
+;; Version: 0.2.1
 ;; Package-Requires: ((idle-timer "v0.1.0"))
 ;; Keywords: indentation
 ;; URL: https://github.com/berquerant/emacs-show-indentation
