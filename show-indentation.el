@@ -3,7 +3,8 @@
 ;; Author: berquerant
 ;; Maintainer: berquerant
 ;; Created: 4 Feb 2026
-;; Version: 0.1.0
+;; Version: 0.2.0
+;; Package-Requires: ((idle-timer "v0.1.0"))
 ;; Keywords: indentation
 ;; URL: https://github.com/berquerant/emacs-show-indentation
 
@@ -28,6 +29,9 @@
 
 ;;; Code:
 
+;; https://github.com/berquerant/emacs-idle-timer
+(require 'idle-timer)
+
 (defgroup show-indentation nil
   "Show indentation depth in the margin."
   :group 'show-indentation
@@ -44,6 +48,10 @@
 (defcustom show-indentation-exclude-buffer-regexp "0^"
   "Regexp for buffer names to exclude from indentation display."
   :type 'string)
+
+(defcustom show-indentation-minor-mode-delay 1
+  "Number of seconds to show indentation."
+  :type 'integer)
 
 (defun show-indentation--show ()
   "Show `current-indentation' in the left margin."
@@ -69,59 +77,34 @@
   (interactive)
   (show-indentation--show))
 
-(defun show-indentation--disable-cleanup ()
-  (set-window-margins (selected-window) 0)
-  (remove-overlays (point-min) (point-max) 'type 'margin-indent))
+(idle-timer-define-minor-mode show-indentation-show show-indentation-minor-mode-delay)
 
-(defun show-indentation--enable-setup ()
-  (show-indentation--show))
+(defun show-indentation-show-idle-timer-mode-toggle--disabled-hook ()
+  (unless show-indentation-show-idle-timer-mode
+    (set-window-margins (selected-window) 0)
+    (remove-overlays (point-min) (point-max) 'type 'margin-indent)
+    (remove-hook 'show-indentation-show-idle-timer-mode-hook
+                 'show-indentation-show-idle-timer-mode-toggle--disabled-hook t)))
 
-(defun show-indentation--disable ()
-  (remove-hook 'post-command-hook 'show-indentation--show t)
-  (show-indentation--disable-cleanup))
+(defun show-indentation-show-idle-timer-mode--hook ()
+  (when show-indentation-show-idle-timer-mode
+    (add-hook 'show-indentation-show-idle-timer-mode-hook
+              'show-indentation-show-idle-timer-mode-toggle--disabled-hook nil t)))
 
-(defun show-indentation--enable ()
-  (add-hook 'post-command-hook 'show-indentation--show nil t)
-  (show-indentation--enable-setup))
+(add-hook 'show-indentation-show-idle-timer-mode-hook 'show-indentation-show-idle-timer-mode--hook)
 
-(defun show-indentation--enabled? ()
-  (member 'show-indentation--show post-command-hook))
-
-;;;###autoload
-(defun show-indentation-toggle ()
-  "If `show-indentation--show' is not in `post-command-hook', add it.
-Otherwise, remove it."
-  (interactive)
-  (if (show-indentation--enabled?) (show-indentation--disable)
-    (show-indentation--enable)))
-
-(defun show-indentation--global-should-show? ()
+(defun show-indentation-show-idle-timer-mode--should-turn-on? ()
   (or (string-match show-indentation-include-buffer-regexp (buffer-name))
       (and (not (string-match show-indentation-exclude-buffer-regexp (buffer-name)))
            (buffer-file-name))))
 
-(defun show-indentation--global-show ()
-  (when (show-indentation--global-should-show?)
-    (show-indentation--show)))
+(defun show-indentation-show-idle-timer-mode-turn-on ()
+  (when (show-indentation-show-idle-timer-mode--should-turn-on?)
+      (show-indentation-show-idle-timer-mode t)))
 
-(defun show-indentation--global-enabled? ()
-  (member 'show-indentation--global-show (default-value 'post-command-hook)))
-
-(defun show-indentation--global-disable ()
-  (remove-hook 'post-command-hook 'show-indentation--global-show)
-  (show-indentation--disable-cleanup))
-
-(defun show-indentation--global-enable ()
-  (add-hook 'post-command-hook 'show-indentation--global-show)
-  (show-indentation--enable-setup))
-
-;;;###autoload
-(defun show-indentation-global-toggle ()
-  "If `show-indentation--global-show' is not in `post-command-hook', add it.
-Otherwise, remove it."
-  (interactive)
-  (if (show-indentation--global-enabled?) (show-indentation--global-disable)
-    (show-indentation--global-enable)))
+(define-globalized-minor-mode global-show-indentation-show-idle-timer-mode
+  show-indentation-show-idle-timer-mode
+  show-indentation-show-idle-timer-mode-turn-on)
 
 (provide 'show-indentation)
 ;;; show-indentation.el ends here

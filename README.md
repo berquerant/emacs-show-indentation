@@ -7,13 +7,13 @@ Show indentation depth in the margin.
 Enable only for the current buffer:
 
 ``` emacs-lisp
-(show-indentation-toggle)
+(show-indentation-show-idle-timer-mode)
 ```
 
 Enable globally:
 
 ``` emacs-lisp
-(show-indentation-global-toggle)
+(global-show-indentation-show-idle-timer-mode)
 ```
 
 ## Customize
@@ -29,3 +29,7 @@ Regexp for buffer names to display indentation.
 ### show-indentation-exclude-buffer-regexp
 
 Regexp for buffer names to exclude from indentation display.
+
+### show-indentation-minor-mode-delay
+
+Number of seconds to show indentation.
