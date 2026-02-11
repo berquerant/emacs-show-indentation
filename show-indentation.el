@@ -77,12 +77,21 @@
   (interactive)
   (show-indentation--show))
 
+(defun show-indentation--cleanup ()
+  (set-window-margins (selected-window) 0)
+  (remove-overlays (point-min) (point-max) 'type 'margin-indent))
+
+;;;###autoload
+(defun show-indentation-cleanup ()
+  "Cleanup `show-indentation-show'."
+  (interactive)
+  (show-indentation--cleanup))
+
 (idle-timer-define-minor-mode show-indentation-show show-indentation-minor-mode-delay)
 
 (defun show-indentation-show-idle-timer-mode-toggle--disabled-hook ()
   (unless show-indentation-show-idle-timer-mode
-    (set-window-margins (selected-window) 0)
-    (remove-overlays (point-min) (point-max) 'type 'margin-indent)
+    (show-indentation--cleanup)
     (remove-hook 'show-indentation-show-idle-timer-mode-hook
                  'show-indentation-show-idle-timer-mode-toggle--disabled-hook t)))
 
@@ -95,8 +104,8 @@
 
 (defun show-indentation-show-idle-timer-mode--should-turn-on? ()
   (or (string-match show-indentation-include-buffer-regexp (buffer-name))
-      (and (not (string-match show-indentation-exclude-buffer-regexp (buffer-name)))
-           (buffer-file-name))))
+           (and (not (string-match show-indentation-exclude-buffer-regexp (buffer-name)))
+                (buffer-file-name))))
 
 (defun show-indentation-show-idle-timer-mode-turn-on ()
   (when (show-indentation-show-idle-timer-mode--should-turn-on?)
