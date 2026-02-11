@@ -103,9 +103,10 @@
 (add-hook 'show-indentation-show-idle-timer-mode-hook 'show-indentation-show-idle-timer-mode--hook)
 
 (defun show-indentation-show-idle-timer-mode--should-turn-on? ()
-  (or (string-match show-indentation-include-buffer-regexp (buffer-name))
+  (and (not (minibufferp))
+       (or (string-match show-indentation-include-buffer-regexp (buffer-name))
            (and (not (string-match show-indentation-exclude-buffer-regexp (buffer-name)))
-                (buffer-file-name))))
+                (buffer-file-name)))))
 
 (defun show-indentation-show-idle-timer-mode-turn-on ()
   (when (show-indentation-show-idle-timer-mode--should-turn-on?)
